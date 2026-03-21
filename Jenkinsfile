@@ -55,10 +55,63 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline completed! StudyOS is deployed.'
+            echo 'Pipeline completed successfully! StudyOS is deployed.'
+            mail(
+                to: 'your-email@gmail.com',
+                subject: "✅ StudyOS Pipeline SUCCESS - Build #${env.BUILD_NUMBER}",
+                body: """
+Hello,
+
+Your StudyOS CI/CD Pipeline completed successfully!
+
+Build Details:
+- Job Name: ${env.JOB_NAME}
+- Build Number: #${env.BUILD_NUMBER}
+- Status: SUCCESS
+- Duration: ${currentBuild.durationString}
+- Build URL: ${env.BUILD_URL}
+
+Stages completed:
+✅ Checkout
+✅ Install Dependencies
+✅ Test
+✅ Docker Build
+✅ Deploy
+
+StudyOS is now live at http://localhost:3000
+
+Regards,
+Jenkins CI/CD
+                """
+            )
         }
         failure {
-            echo 'Pipeline failed! Check the logs.'
+            echo 'Pipeline failed! Check the logs above.'
+            mail(
+                to: 'your-email@gmail.com',
+                subject: "❌ StudyOS Pipeline FAILED - Build #${env.BUILD_NUMBER}",
+                body: """
+Hello,
+
+Your StudyOS CI/CD Pipeline has FAILED!
+
+Build Details:
+- Job Name: ${env.JOB_NAME}
+- Build Number: #${env.BUILD_NUMBER}
+- Status: FAILED
+- Duration: ${currentBuild.durationString}
+- Build URL: ${env.BUILD_URL}
+
+Please check the logs at:
+${env.BUILD_URL}console
+
+Regards,
+Jenkins CI/CD
+                """
+            )
+        }
+        always {
+            echo "Build #${env.BUILD_NUMBER} finished with status: ${currentBuild.result}"
         }
     }
 }
