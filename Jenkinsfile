@@ -42,13 +42,14 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            steps {
-                echo 'Deploying all services...'
-                bat 'docker-compose down'
-                bat 'docker-compose up -d'
-            }
-        }
+       stage('Deploy') {
+    steps {
+        echo 'Deploying all services...'
+        bat 'docker-compose down --remove-orphans'
+        bat 'docker rm -f studyos-mongodb studyos-auth studyos-task studyos-frontend studyos-scheduler 2>nul || exit 0'
+        bat 'docker-compose up -d'
+    }
+}
 
     }
 
