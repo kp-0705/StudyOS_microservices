@@ -42,13 +42,12 @@ pipeline {
             }
         }
 
-         stage('Ansible Deploy') {
+        stage('Ansible Deploy') {
             steps {
                 echo 'Deploying with Ansible...'
                 bat 'wsl ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml'
             }
         }
-}
 
     }
 
@@ -75,7 +74,7 @@ Stages completed:
 ✅ Install Dependencies
 ✅ Test
 ✅ Docker Build
-✅ Deploy
+✅ Ansible Deploy
 
 StudyOS is now live at http://localhost:3000
 
@@ -113,4 +112,4 @@ Jenkins CI/CD
             echo "Build #${env.BUILD_NUMBER} finished with status: ${currentBuild.result}"
         }
     }
-
+}
