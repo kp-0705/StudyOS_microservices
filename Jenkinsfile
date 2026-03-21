@@ -113,4 +113,4 @@ Jenkins CI/CD
             echo "Build #${env.BUILD_NUMBER} finished with status: ${currentBuild.result}"
         }
     }
-}
+
