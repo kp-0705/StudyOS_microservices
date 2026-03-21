@@ -42,13 +42,12 @@ pipeline {
             }
         }
 
-       stage('Deploy') {
-    steps {
-        echo 'Deploying all services...'
-        bat 'docker-compose down --remove-orphans'
-        bat 'docker rm -f studyos-mongodb studyos-auth studyos-task studyos-frontend studyos-scheduler 2>nul || exit 0'
-        bat 'docker-compose up -d'
-    }
+         stage('Ansible Deploy') {
+            steps {
+                echo 'Deploying with Ansible...'
+                bat 'wsl ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml'
+            }
+        }
 }
 
     }

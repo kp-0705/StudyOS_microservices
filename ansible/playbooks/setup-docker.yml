@@ -1,0 +1,47 @@
+---
+- name: Setup and Start StudyOS Docker Containers
+  hosts: local
+  become: false
+
+  tasks:
+    - name: Check Docker is running
+      command: docker info
+      register: docker_info
+      ignore_errors: yes
+
+    - name: Stop existing containers
+      command: docker-compose down
+      args:
+        chdir: /mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos
+      ignore_errors: yes
+
+    - name: Build Docker images
+      command: docker-compose build
+      args:
+        chdir: /mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos
+
+    - name: Remove conflicting containers
+      shell: |
+        docker rm -f studyos-mongodb studyos-auth studyos-task studyos-frontend studyos-scheduler 2>/dev/null || true
+      ignore_errors: yes
+
+    - name: Start all containers
+      shell: docker-compose up -d
+      args:
+        chdir: "/mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos"
+
+    - name: Wait for containers to start
+      pause:
+        seconds: 10
+
+    - name: Check running containers
+      command: docker ps
+      register: containers
+
+    - name: Print running containers
+      debug:
+        msg: "{{ containers.stdout }}"
+
+    - name: Docker setup completed
+      debug:
+        msg: "StudyOS is running in Docker containers!"

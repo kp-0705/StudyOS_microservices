@@ -1,0 +1,27 @@
+---
+- name: Print deployment start
+  hosts: local
+  become: false
+  tasks:
+    - name: Deployment starting
+      debug:
+        msg: "Starting StudyOS full deployment..."
+
+- import_playbook: install-dependencies.yml
+
+- import_playbook: configure-env.yml
+
+- import_playbook: setup-docker.yml
+
+- name: Deployment complete
+  hosts: local
+  become: false
+  tasks:
+    - name: Print success message
+      debug:
+        msg: |
+          StudyOS deployed successfully!
+          Frontend  → http://localhost:3000
+          Auth      → http://localhost:5002
+          Tasks     → http://localhost:5001
+          Scheduler → http://localhost:5003
