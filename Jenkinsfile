@@ -30,10 +30,32 @@ pipeline {
         }
 
         stage('Test') {
-            steps {
-                echo 'No tests written yet — skipping'
-            }
+    steps {
+        echo 'Running frontend tests...'
+
+        dir('frontend') {
+            bat 'npm install'
+            bat 'npm test -- --watchAll=false'
         }
+
+        echo 'Running backend service checks...'
+
+        dir('services/auth-service') {
+            bat 'npm install'
+            bat 'npm test'
+        }
+
+        dir('services/task-service') {
+            bat 'npm install'
+            bat 'npm test'
+        }
+
+        dir('services/scheduler-service') {
+            bat 'npm install'
+            bat 'npm test'
+        }
+    }
+}
 
         stage('Docker Build') {
             steps {
