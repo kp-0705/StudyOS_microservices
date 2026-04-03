@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKER_HUB_USER = 'kp0705'
+        KUBECONFIG = '/home/dell/.kube/config'
     }
 
     stages {
