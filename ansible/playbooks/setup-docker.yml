@@ -3,45 +3,65 @@
   hosts: local
   become: false
 
+  vars:
+    project_dir: "/home/dell/Desktop/Sem_2/SPE/END_PROJECT/student-task-pipeline"
+
   tasks:
-    - name: Check Docker is running
+    - name: Check Docker daemon is running
       command: docker info
       register: docker_info
       ignore_errors: yes
 
-    - name: Stop existing containers
-      command: docker-compose down
+    - name: Fail if Docker is not running
+      fail:
+        msg: "Docker daemon is NOT running! Start it with: sudo systemctl start docker"
+      when: docker_info.rc != 0
+
+    - name: Stop any existing StudyOS containers
+      shell: docker-compose down --remove-orphans
       args:
-        chdir: /mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos
+        chdir: "{{ project_dir }}"
       ignore_errors: yes
 
-    - name: Build Docker images
-      command: docker-compose build
-      args:
-        chdir: /mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos
-
-    - name: Remove conflicting containers
+    - name: Remove conflicting named containers (clean slate)
       shell: |
         docker rm -f studyos-mongodb studyos-auth studyos-task studyos-frontend studyos-scheduler 2>/dev/null || true
       ignore_errors: yes
 
-    - name: Start all containers
+    - name: Build all Docker images
+      shell: docker-compose build
+      args:
+        chdir: "{{ project_dir }}"
+
+    - name: Start all containers in detached mode
       shell: docker-compose up -d
       args:
-        chdir: "/mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos"
+        chdir: "{{ project_dir }}"
 
-    - name: Wait for containers to start
+    - name: Wait for containers to fully start
       pause:
         seconds: 10
 
-    - name: Check running containers
+    - name: Check all running containers
       command: docker ps
       register: containers
 
-    - name: Print running containers
+    - name: Print container status
       debug:
-        msg: "{{ containers.stdout }}"
+        msg: "{{ containers.stdout_lines }}"
 
-    - name: Docker setup completed
+    - name: Verify frontend is accessible
+      uri:
+        url: "http://localhost:3000"
+        status_code: 200
+      register: frontend_check
+      ignore_errors: yes
+
+    - name: Print access URLs
       debug:
-        msg: "StudyOS is running in Docker containers!"
+        msg:
+          - "✅ StudyOS Docker setup complete!"
+          - "🌐 Frontend  → http://localhost:3000"
+          - "🔐 Auth      → http://localhost:5002"
+          - "📋 Tasks     → http://localhost:5001"
+          - "⏰ Scheduler → http://localhost:5003"

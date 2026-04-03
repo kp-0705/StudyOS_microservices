@@ -4,15 +4,16 @@
   become: false
 
   vars:
-    mongo_uri: "mongodb://localhost:27017/studyos"
+    project_dir: "/home/dell/Desktop/Sem_2/SPE/END_PROJECT/student-task-pipeline"
+    mongo_uri: "mongodb://mongodb:27017/studyos"
     jwt_secret: "studyos_super_secret_key"
-    auth_service_url: "http://localhost:5002"
-    task_service_url: "http://localhost:5001"
+    auth_service_url: "http://auth-service:5002"
+    task_service_url: "http://task-service:5001"
 
   tasks:
     - name: Create .env for auth-service
       copy:
-        dest: "/mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos/services/auth-service/.env"
+        dest: "{{ project_dir }}/services/auth-service/.env"
         content: |
           PORT=5002
           MONGO_URI={{ mongo_uri }}
@@ -20,7 +21,7 @@
 
     - name: Create .env for task-service
       copy:
-        dest: "/mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos/services/task-service/.env"
+        dest: "{{ project_dir }}/services/task-service/.env"
         content: |
           PORT=5001
           MONGO_URI={{ mongo_uri }}
@@ -29,11 +30,18 @@
 
     - name: Create .env for scheduler-service
       copy:
-        dest: "/mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos/services/scheduler-service/.env"
+        dest: "{{ project_dir }}/services/scheduler-service/.env"
         content: |
           PORT=5003
           TASK_SERVICE_URL={{ task_service_url }}
 
+    - name: Create .env for frontend
+      copy:
+        dest: "{{ project_dir }}/frontend/.env"
+        content: |
+          REACT_APP_AUTH_URL=http://localhost:5002
+          REACT_APP_TASK_URL=http://localhost:5001
+
     - name: Environment variables configured successfully
       debug:
-        msg: "All .env files created for StudyOS services!"
+        msg: "✅ All .env files created for StudyOS services!"

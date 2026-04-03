@@ -3,26 +3,23 @@
   hosts: local
   become: false
 
+  vars:
+    project_dir: "/home/dell/Desktop/Sem_2/SPE/END_PROJECT/student-task-pipeline"
+
   tasks:
     - name: Check if Node.js is available
       command: which node
       register: node_check
       ignore_errors: yes
 
-    - name: Install Node.js in WSL
-      shell: |
-        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-      when: node_check.rc != 0
-
     - name: Check Node.js version
-      shell: node --version || nodejs --version
+      shell: node --version
       register: node_version
       ignore_errors: yes
 
     - name: Print Node.js version
       debug:
-        msg: "Node.js: {{ node_version.stdout }}"
+        msg: "Node.js version: {{ node_version.stdout }}"
       when: node_version.stdout is defined
 
     - name: Check Docker version
@@ -32,27 +29,33 @@
 
     - name: Print Docker version
       debug:
-        msg: "Docker: {{ docker_version.stdout }}"
+        msg: "Docker version: {{ docker_version.stdout }}"
       when: docker_version.rc == 0
 
     - name: Install auth-service dependencies
       shell: npm install
       args:
-        chdir: "/mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos/services/auth-service"
+        chdir: "{{ project_dir }}/services/auth-service"
       ignore_errors: yes
 
     - name: Install task-service dependencies
       shell: npm install
       args:
-        chdir: "/mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos/services/task-service"
+        chdir: "{{ project_dir }}/services/task-service"
       ignore_errors: yes
 
     - name: Install scheduler-service dependencies
       shell: npm install
       args:
-        chdir: "/mnt/c/Users/HP/OneDrive/Desktop/MTech/Sem2/SPE/Final Project/studyos/services/scheduler-service"
+        chdir: "{{ project_dir }}/services/scheduler-service"
+      ignore_errors: yes
+
+    - name: Install frontend dependencies
+      shell: npm install
+      args:
+        chdir: "{{ project_dir }}/frontend"
       ignore_errors: yes
 
     - name: Dependencies installation complete
       debug:
-        msg: "All dependencies installed successfully!"
+        msg: "✅ All dependencies installed successfully for StudyOS!"
