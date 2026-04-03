@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USER = 'gaurav1374'
+        DOCKER_HUB_USER = 'kp0705'
     }
 
     stages {
@@ -18,57 +18,55 @@ pipeline {
             steps {
                 echo 'Installing dependencies for all services...'
                 dir('services/auth-service') {
-                    bat 'npm install'
+                    sh 'npm install'
                 }
                 dir('services/task-service') {
-                    bat 'npm install'
+                    sh 'npm install'
                 }
                 dir('services/scheduler-service') {
-                    bat 'npm install'
+                    sh 'npm install'
                 }
             }
         }
-//adding tests
+
         stage('Test') {
-             steps {
+            steps {
                 echo 'Running frontend tests...'
-             }
-        
-//                 dir('frontend') {
-//                     bat 'npm install'
-//                     bat 'npm test -- --watchAll=false'
-//                 }
-        
-//                 echo 'Running backend service checks...'
-        
-//                 dir('services/auth-service') {
-//                     bat 'npm install'
-//                     bat 'npm test'
-//                 }
-        
-//                 dir('services/task-service') {
-//                     bat 'npm install'
-//                     bat 'npm test'
-//                 }
-        
-//                 dir('services/scheduler-service') {
-//                     bat 'npm install'
-//                     bat 'npm test'
-//                 }
-//         }
-}
+                dir('frontend') {
+                    sh 'npm install'
+                    sh 'npm test -- --watchAll=false --passWithNoTests'
+                }
+
+                echo 'Running backend service checks...'
+
+                dir('services/auth-service') {
+                    sh 'npm install'
+                    sh 'npm test'
+                }
+
+                dir('services/task-service') {
+                    sh 'npm install'
+                    sh 'npm test'
+                }
+
+                dir('services/scheduler-service') {
+                    sh 'npm install'
+                    sh 'npm test'
+                }
+            }
+        }
 
         stage('Docker Build') {
             steps {
                 echo 'Building Docker images...'
-                bat 'docker-compose build'
+                sh 'docker-compose build'
             }
         }
 
         stage('Ansible Deploy') {
             steps {
                 echo 'Deploying with Ansible...'
-                bat 'wsl ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml'
+                sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml'
             }
         }
 
@@ -78,7 +76,7 @@ pipeline {
         success {
             echo 'Pipeline completed successfully! StudyOS is deployed.'
             mail(
-                to: '1762003rajpurohitgaurav@gmail.com',
+                to: 'kpbhai0705@gmail.com',
                 subject: "✅ StudyOS Pipeline SUCCESS - Build #${env.BUILD_NUMBER}",
                 body: """
 Hello,
@@ -109,7 +107,7 @@ Jenkins CI/CD
         failure {
             echo 'Pipeline failed! Check the logs above.'
             mail(
-                to: '1762003rajpurohitgaurav@gmail.com',
+                to: 'kpbhai0705@gmail.com',
                 subject: "❌ StudyOS Pipeline FAILED - Build #${env.BUILD_NUMBER}",
                 body: """
 Hello,
