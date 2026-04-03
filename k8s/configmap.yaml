@@ -1,0 +1,30 @@
+# ============================================================
+# ConfigMap: studyos-config
+# Stores all NON-SENSITIVE configuration as key-value pairs
+# Used by all services as environment variables
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: studyos-config
+  namespace: studyos
+  labels:
+    app: studyos
+data:
+  # --- Ports ---
+  AUTH_PORT: "5002"
+  TASK_PORT: "5001"
+  SCHEDULER_PORT: "5003"
+
+  # --- Internal Service URLs (Kubernetes DNS) ---
+  AUTH_SERVICE_URL: "http://auth-service:5002"
+  TASK_SERVICE_URL: "http://task-service:5001"
+
+  # --- MongoDB ---
+  MONGO_DB: "studyos"
+  MONGO_HOST: "mongodb"
+  MONGO_PORT: "27017"
+
+  # --- App settings ---
+  NODE_ENV: "production"
+  APP_NAME: "StudyOS"

@@ -1,0 +1,23 @@
+# ============================================================
+# Service: mongodb
+# Type: ClusterIP — INTERNAL only (not exposed outside cluster)
+# All backend services connect via: mongodb:27017
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: database
+    component: mongodb
+spec:
+  type: ClusterIP       # Internal access only — never expose DB externally!
+  selector:
+    app: mongodb        # Routes traffic to pods with this label
+  ports:
+    - name: mongo
+      port: 27017       # Service port
+      targetPort: 27017 # Container port
+      protocol: TCP

@@ -1,0 +1,22 @@
+# ============================================================
+# Service: scheduler-service
+# Type: ClusterIP — internal access only
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: scheduler-service
+spec:
+  type: ClusterIP
+  selector:
+    app: scheduler-service
+  ports:
+    - name: http
+      port: 5003
+      targetPort: 5003
+      protocol: TCP

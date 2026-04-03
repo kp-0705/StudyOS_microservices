@@ -1,0 +1,89 @@
+# ============================================================
+# Deployment: scheduler-service
+# Background job scheduler that checks overdue/due-today tasks
+# Image: kp0705/scheduler-service:latest (built by Jenkins)
+# Port: 5003
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: scheduler-service
+spec:
+  replicas: 1         # Only 1 replica (background job, no scaling needed)
+  selector:
+    matchLabels:
+      app: scheduler-service
+
+  # ---- Rolling Update Strategy ----
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    metadata:
+      labels:
+        app: scheduler-service
+        tier: backend
+    spec:
+      containers:
+        - name: scheduler-service
+          image: kp0705/scheduler-service:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 5003
+
+          # ---- Environment Variables ----
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: SCHEDULER_PORT
+            - name: TASK_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: TASK_SERVICE_URL
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: NODE_ENV
+
+          # ---- Resource Limits & Requests ----
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+
+          # ---- Liveness Probe ----
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5003
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ---- Readiness Probe ----
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3

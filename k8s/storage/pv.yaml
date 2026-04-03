@@ -1,0 +1,28 @@
+# ============================================================
+# PersistentVolume: mongodb-pv
+# A cluster-level storage resource (10Gi)
+# Uses hostPath for local/Minikube development
+# In production: use cloud volumes (EBS, GCE PD, etc.)
+# ============================================================
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongodb-pv
+  labels:
+    app: studyos
+    type: local
+    tier: database
+spec:
+  capacity:
+    storage: 10Gi
+
+  accessModes:
+    - ReadWriteOnce          # Only one node can mount at a time
+
+  persistentVolumeReclaimPolicy: Retain   # Keep data even after PVC is deleted
+
+  storageClassName: manual   # Must match PVC storageClassName
+
+  hostPath:
+    path: "/mnt/data/studyos-mongodb"    # Directory on the host node
+    type: DirectoryOrCreate              # Create dir if it doesn't exist

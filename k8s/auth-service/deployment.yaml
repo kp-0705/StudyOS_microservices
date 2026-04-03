@@ -1,0 +1,98 @@
+# ============================================================
+# Deployment: auth-service
+# Handles user registration, login, and JWT token generation
+# Image: kp0705/auth-service:latest (built by Jenkins)
+# Port: 5002
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: auth-service
+spec:
+  replicas: 2         # Start with 2 replicas for availability
+  selector:
+    matchLabels:
+      app: auth-service
+
+  # ---- Rolling Update Strategy (Zero Downtime Deployment) ----
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1           # Temporarily allow 1 extra pod during update
+      maxUnavailable: 0     # Ensure zero downtime — old pod stays alive until new is ready
+
+  template:
+    metadata:
+      labels:
+        app: auth-service
+        tier: backend
+    spec:
+      containers:
+        - name: auth-service
+          image: kp0705/auth-service:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 5002
+
+          # ---- Environment from ConfigMap (non-sensitive) ----
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: AUTH_PORT
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: NODE_ENV
+
+            # ---- Environment from Secret (sensitive) ----
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: studyos-secret
+                  key: MONGO_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: studyos-secret
+                  key: JWT_SECRET
+
+          # ---- Resource Limits & Requests ----
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+
+          # ---- Liveness Probe (Is the service alive / not crashed?) ----
+          # If this fails 3 times, Kubernetes RESTARTS the container
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5002
+            initialDelaySeconds: 20   # Wait 20s before first check (let app start)
+            periodSeconds: 15         # Check every 15 seconds
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ---- Readiness Probe (Is the service ready to receive traffic?) ----
+          # If this fails, pod is REMOVED from load balancer (no traffic sent)
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3

@@ -1,0 +1,42 @@
+# ============================================================
+# HorizontalPodAutoscaler: auth-service
+# Automatically scales auth-service pods based on CPU usage
+#
+# Behavior:
+#   - min 1 pod, max 5 pods
+#   - Scales UP when avg CPU > 60%
+#   - Scales DOWN when CPU drops below threshold
+#   - Requires: metrics-server installed on cluster
+#     (minikube: minikube addons enable metrics-server)
+# ============================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: auth-service-hpa
+  namespace: studyos
+  labels:
+    app: studyos
+    component: auth-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: auth-service
+
+  minReplicas: 1    # Minimum pods when no load
+  maxReplicas: 5    # Maximum pods under high load
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60   # Scale up if CPU > 60%
+
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70   # Scale up if Memory > 70%

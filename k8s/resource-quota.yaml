@@ -1,0 +1,33 @@
+# ============================================================
+# ResourceQuota: studyos-quota
+# Limits total resource usage within the studyos namespace
+# Prevents any single namespace from consuming all cluster resources
+# ============================================================
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: studyos-quota
+  namespace: studyos
+  labels:
+    app: studyos
+spec:
+  hard:
+    # Max number of pods
+    pods: "20"
+
+    # Max total CPU requests
+    requests.cpu: "2"
+    # Max total CPU limits
+    limits.cpu: "4"
+
+    # Max total memory requests
+    requests.memory: "2Gi"
+    # Max total memory limits
+    limits.memory: "4Gi"
+
+    # Max number of PersistentVolumeClaims
+    persistentvolumeclaims: "5"
+
+    # Max number of Services
+    services: "10"
+    services.nodeports: "3"

@@ -1,0 +1,23 @@
+# ============================================================
+# Service: task-service
+# Type: ClusterIP — internal access only
+# scheduler-service connects via: http://task-service:5001
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: task-service
+spec:
+  type: ClusterIP
+  selector:
+    app: task-service
+  ports:
+    - name: http
+      port: 5001
+      targetPort: 5001
+      protocol: TCP

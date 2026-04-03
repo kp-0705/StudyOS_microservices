@@ -1,0 +1,28 @@
+# ============================================================
+# Service: frontend
+# Type: NodePort — EXTERNAL access on port 30000
+#
+# Access the app at: http://localhost:30000  (Minikube)
+#                or: http://<node-ip>:30000
+#
+# For cloud clusters, use LoadBalancer type instead
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: frontend
+    component: frontend
+spec:
+  type: NodePort        # Exposes service on each Node's IP at a static port
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80          # Service port (cluster internal)
+      targetPort: 80    # Container port (nginx)
+      nodePort: 30000   # External port (access: http://localhost:30000)
+      protocol: TCP

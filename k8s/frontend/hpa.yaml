@@ -1,0 +1,36 @@
+# ============================================================
+# HorizontalPodAutoscaler: frontend
+# Scales frontend pods 2–8 based on CPU/Memory
+# (Frontend is usually the bottleneck under high traffic)
+# ============================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+  namespace: studyos
+  labels:
+    app: studyos
+    component: frontend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+
+  minReplicas: 2    # Minimum 2 for HA (High Availability)
+  maxReplicas: 8    # Max 8 under traffic spikes
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70

@@ -70,6 +70,48 @@ pipeline {
             }
         }
 
+        stage('Kubernetes Deploy') {
+            steps {
+                echo 'Deploying to Kubernetes cluster (Minikube)...'
+
+                // Apply namespace first
+                sh 'kubectl apply -f k8s/namespace.yaml'
+
+                // Apply ConfigMap and Secret
+                sh 'kubectl apply -f k8s/configmap.yaml'
+                sh 'kubectl apply -f k8s/secret.yaml'
+
+                // Apply Storage (PV and PVC for MongoDB)
+                sh 'kubectl apply -f k8s/storage/'
+
+                // Apply MongoDB
+                sh 'kubectl apply -f k8s/mongodb/'
+
+                // Apply all backend microservices
+                sh 'kubectl apply -f k8s/auth-service/'
+                sh 'kubectl apply -f k8s/task-service/'
+                sh 'kubectl apply -f k8s/scheduler-service/'
+
+                // Apply Frontend
+                sh 'kubectl apply -f k8s/frontend/'
+
+                // Apply Ingress and ResourceQuota
+                sh 'kubectl apply -f k8s/ingress.yaml'
+                sh 'kubectl apply -f k8s/resource-quota.yaml'
+
+                // Wait for rollouts to complete
+                echo 'Waiting for deployments to roll out...'
+                sh 'kubectl rollout status deployment/auth-service -n studyos --timeout=120s'
+                sh 'kubectl rollout status deployment/task-service -n studyos --timeout=120s'
+                sh 'kubectl rollout status deployment/scheduler-service -n studyos --timeout=120s'
+                sh 'kubectl rollout status deployment/frontend -n studyos --timeout=120s'
+
+                // Show final status
+                echo 'Kubernetes deployment status:'
+                sh 'kubectl get all -n studyos'
+            }
+        }
+
     }
 
     post {
@@ -96,8 +138,13 @@ Stages completed:
 ✅ Test
 ✅ Docker Build
 ✅ Ansible Deploy
+✅ Kubernetes Deploy
 
-StudyOS is now live at http://localhost:3000
+StudyOS is now live at:
+- Frontend (NodePort): http://localhost:30000
+- Frontend (Ingress):  http://studyos.local
+- Auth API (Ingress):  http://api.studyos.local/auth
+- Task API (Ingress):  http://api.studyos.local/tasks
 
 Regards,
 Jenkins CI/CD

@@ -1,0 +1,12 @@
+# ============================================================
+# Namespace: studyos
+# Isolates all StudyOS resources from other cluster workloads
+# ============================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: studyos
+  labels:
+    app: studyos
+    env: production
+    team: spe-project

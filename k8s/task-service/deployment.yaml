@@ -1,0 +1,99 @@
+# ============================================================
+# Deployment: task-service
+# Handles task CRUD operations, communicates with auth-service
+# Image: kp0705/task-service:latest (built by Jenkins)
+# Port: 5001
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: task-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: task-service
+
+  # ---- Rolling Update Strategy (Zero Downtime Deployment) ----
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    metadata:
+      labels:
+        app: task-service
+        tier: backend
+    spec:
+      containers:
+        - name: task-service
+          image: kp0705/task-service:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 5001
+
+          # ---- Environment Variables ----
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: TASK_PORT
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: AUTH_SERVICE_URL
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: NODE_ENV
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: studyos-secret
+                  key: MONGO_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: studyos-secret
+                  key: JWT_SECRET
+
+          # ---- Resource Limits & Requests ----
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+
+          # ---- Liveness Probe ----
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ---- Readiness Probe ----
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3

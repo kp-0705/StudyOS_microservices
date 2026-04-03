@@ -1,0 +1,85 @@
+# ============================================================
+# Deployment: mongodb
+# StatefulDB deployment for StudyOS using official mongo:6 image
+# Uses PVC for persistent data storage at /data/db
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: database
+    component: mongodb
+spec:
+  replicas: 1         # Only 1 replica (MongoDB is stateful)
+  selector:
+    matchLabels:
+      app: mongodb
+
+  # ---- Rolling Update Strategy ----
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1           # Max 1 extra pod during update
+      maxUnavailable: 0     # Never bring down old pod before new is ready
+
+  template:
+    metadata:
+      labels:
+        app: mongodb
+        tier: database
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:6.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 27017
+
+          # ---- Volume Mount (/data/db is where MongoDB stores data) ----
+          volumeMounts:
+            - name: mongodb-storage
+              mountPath: /data/db
+
+          # ---- Resource Limits & Requests ----
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          # ---- Liveness Probe (Is MongoDB alive?) ----
+          livenessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          # ---- Readiness Probe (Is MongoDB ready to accept connections?) ----
+          readinessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+
+      # ---- PVC Volume ----
+      volumes:
+        - name: mongodb-storage
+          persistentVolumeClaim:
+            claimName: mongodb-pvc

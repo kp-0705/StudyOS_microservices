@@ -1,0 +1,71 @@
+# ============================================================
+# Deployment: frontend
+# React application served via nginx
+# Image: kp0705/frontend:latest (built by Jenkins)
+# Port: 80 (nginx inside container)
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: frontend
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+
+  # ---- Rolling Update Strategy (Zero Downtime Deployment) ----
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: kp0705/frontend:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 80   # nginx default port
+
+          # ---- Resource Limits & Requests ----
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+
+          # ---- Liveness Probe (nginx serving responses?) ----
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ---- Readiness Probe (ready to receive traffic?) ----
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3

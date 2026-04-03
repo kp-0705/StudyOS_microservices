@@ -1,0 +1,22 @@
+# ============================================================
+# PersistentVolumeClaim: mongodb-pvc
+# Claims storage from mongodb-pv for use by MongoDB pod
+# MongoDB pod mounts this at /data/db
+# ============================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: database
+spec:
+  accessModes:
+    - ReadWriteOnce          # Matches PV accessMode
+
+  storageClassName: manual   # Matches PV storageClassName
+
+  resources:
+    requests:
+      storage: 10Gi          # Must be <= PV capacity

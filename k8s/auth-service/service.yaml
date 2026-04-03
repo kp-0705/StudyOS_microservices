@@ -1,0 +1,23 @@
+# ============================================================
+# Service: auth-service
+# Type: ClusterIP — internal access only
+# task-service connects via: http://auth-service:5002
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: auth-service
+spec:
+  type: ClusterIP
+  selector:
+    app: auth-service
+  ports:
+    - name: http
+      port: 5002
+      targetPort: 5002
+      protocol: TCP

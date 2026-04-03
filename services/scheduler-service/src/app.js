@@ -17,6 +17,12 @@ app.get('/', (req, res) => {
   res.json({ service: 'Scheduler Service', status: 'running', port: 5003 });
 });
 
+// Kubernetes health probe endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', service: 'scheduler-service' });
+});
+
+
 // Manually trigger overdue check
 app.get('/api/schedule/overdue', async (req, res) => {
   try {

@@ -1,0 +1,78 @@
+# ============================================================
+# Ingress: studyos-ingress
+# Routes external HTTP traffic to correct internal services
+# Based on host/path matching
+#
+# Requires nginx-ingress controller:
+#   minikube addons enable ingress
+#
+# Add to /etc/hosts:
+#   127.0.0.1  studyos.local
+#   127.0.0.1  api.studyos.local
+#
+# Then access:
+#   http://studyos.local          → Frontend
+#   http://api.studyos.local/auth → Auth Service
+#   http://api.studyos.local/tasks → Task Service
+#   http://api.studyos.local/scheduler → Scheduler Service
+# ============================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: studyos-ingress
+  namespace: studyos
+  labels:
+    app: studyos
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+
+spec:
+  ingressClassName: nginx    # Use nginx ingress controller
+
+  rules:
+    # ---- Frontend: studyos.local → React App ----
+    - host: studyos.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+
+    # ---- API: api.studyos.local → Backend Services ----
+    - host: api.studyos.local
+      http:
+        paths:
+          # Auth Service — /auth/...
+          - path: /auth
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 5002
+
+          # Task Service — /tasks/...
+          - path: /tasks
+            pathType: Prefix
+            backend:
+              service:
+                name: task-service
+                port:
+                  number: 5001
+
+          # Scheduler Service — /scheduler/...
+          - path: /scheduler
+            pathType: Prefix
+            backend:
+              service:
+                name: scheduler-service
+                port:
+                  number: 5003

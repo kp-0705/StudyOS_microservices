@@ -17,4 +17,9 @@ app.get('/', (req, res) => {
   res.json({ service: 'Auth Service', status: 'running', port: 5002 });
 });
 
+// Kubernetes health probe endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', service: 'auth-service' });
+});
+
 module.exports = app;
