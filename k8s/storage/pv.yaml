@@ -21,7 +21,7 @@ spec:
 
   persistentVolumeReclaimPolicy: Retain   # Keep data even after PVC is deleted
 
-  storageClassName: manual   # Must match PVC storageClassName
+  storageClassName: standard   # Must match PVC storageClassName
 
   hostPath:
     path: "/mnt/data/studyos-mongodb"    # Directory on the host node

@@ -34,8 +34,8 @@ spec:
     spec:
       containers:
         - name: task-service
-          image: kp0705/task-service:latest
-          imagePullPolicy: Always
+          image: student-task-pipeline-task-service:latest
+          imagePullPolicy: Never
 
           ports:
             - containerPort: 5001

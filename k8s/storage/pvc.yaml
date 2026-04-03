@@ -15,7 +15,7 @@ spec:
   accessModes:
     - ReadWriteOnce          # Matches PV accessMode
 
-  storageClassName: manual   # Matches PV storageClassName
+  storageClassName: standard   # Matches PV storageClassName
 
   resources:
     requests:

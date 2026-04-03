@@ -34,8 +34,8 @@ spec:
     spec:
       containers:
         - name: scheduler-service
-          image: kp0705/scheduler-service:latest
-          imagePullPolicy: Always
+          image: student-task-pipeline-scheduler-service:latest
+          imagePullPolicy: Never
 
           ports:
             - containerPort: 5003

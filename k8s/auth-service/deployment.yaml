@@ -34,8 +34,8 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: kp0705/auth-service:latest
-          imagePullPolicy: Always
+          image: student-task-pipeline-auth-service:latest
+          imagePullPolicy: Never
 
           ports:
             - containerPort: 5002
