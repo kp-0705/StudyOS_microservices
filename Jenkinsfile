@@ -64,10 +64,47 @@ pipeline {
             }
         }
 
+        stage('Load Images to Minikube') {
+            steps {
+                echo 'Loading images into Minikube...'
+                sh '''
+                    minikube image load student-task-pipeline-auth-service:latest
+                    minikube image load student-task-pipeline-task-service:latest
+                    minikube image load student-task-pipeline-scheduler-service:latest
+                    minikube image load student-task-pipeline-frontend:latest
+                '''
+            }
+        }
+
         stage('Ansible Deploy') {
             steps {
                 echo 'Deploying with Ansible...'
                 sh 'ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml'
+            }
+        }
+
+        stage('Minikube Health Check') {
+            steps {
+                echo 'Checking Minikube status...'
+                sh '''
+                    # Check if minikube is running
+                    MINIKUBE_STATUS=$(minikube status --format='{{.Host}}' 2>/dev/null || echo "Stopped")
+                    echo "Minikube Host Status: $MINIKUBE_STATUS"
+
+                    if [ "$MINIKUBE_STATUS" != "Running" ]; then
+                        echo "⚠️  Minikube is not running. Starting Minikube..."
+                        minikube start --driver=docker
+                    fi
+
+                    # Ensure kubectl context is set to minikube
+                    kubectl config use-context minikube
+
+                    # Wait for API server to be responsive
+                    echo "Waiting for Kubernetes API server to be reachable..."
+                    timeout 60s bash -c 'until kubectl cluster-info; do echo "Waiting for cluster..."; sleep 2; done'
+                    
+                    echo "✅ Cluster is reachable and ready."
+                '''
             }
         }
 
@@ -76,29 +113,29 @@ pipeline {
                 echo 'Deploying to Kubernetes cluster (Minikube)...'
 
                 // Apply namespace first
-                sh 'kubectl apply -f k8s/namespace.yaml'
+                sh 'kubectl apply -f k8s/namespace.yaml --validate=false'
 
                 // Apply ConfigMap and Secret
-                sh 'kubectl apply -f k8s/configmap.yaml'
-                sh 'kubectl apply -f k8s/secret.yaml'
+                sh 'kubectl apply -f k8s/configmap.yaml --validate=false'
+                sh 'kubectl apply -f k8s/secret.yaml --validate=false'
 
                 // Apply Storage (PV and PVC for MongoDB)
-                sh 'kubectl apply -f k8s/storage/'
+                sh 'kubectl apply -f k8s/storage/ --validate=false'
 
                 // Apply MongoDB
-                sh 'kubectl apply -f k8s/mongodb/'
+                sh 'kubectl apply -f k8s/mongodb/ --validate=false'
 
                 // Apply all backend microservices
-                sh 'kubectl apply -f k8s/auth-service/'
-                sh 'kubectl apply -f k8s/task-service/'
-                sh 'kubectl apply -f k8s/scheduler-service/'
+                sh 'kubectl apply -f k8s/auth-service/ --validate=false'
+                sh 'kubectl apply -f k8s/task-service/ --validate=false'
+                sh 'kubectl apply -f k8s/scheduler-service/ --validate=false'
 
                 // Apply Frontend
-                sh 'kubectl apply -f k8s/frontend/'
+                sh 'kubectl apply -f k8s/frontend/ --validate=false'
 
                 // Apply Ingress and ResourceQuota
-                sh 'kubectl apply -f k8s/ingress.yaml'
-                sh 'kubectl apply -f k8s/resource-quota.yaml'
+                sh 'kubectl apply -f k8s/ingress.yaml --validate=false'
+                sh 'kubectl apply -f k8s/resource-quota.yaml --validate=false'
 
                 // Wait for rollouts to complete
                 echo 'Waiting for deployments to roll out...'

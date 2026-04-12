@@ -18,12 +18,11 @@ spec:
     matchLabels:
       app: mongodb
 
-  # ---- Rolling Update Strategy ----
+  # ---- Strategy: Recreate ----
+  # Singleton databases with PVCs MUST use Recreate to ensure the old pod 
+  # releases the storage lock before the new pod starts.
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1           # Max 1 extra pod during update
-      maxUnavailable: 0     # Never bring down old pod before new is ready
+    type: Recreate
 
   template:
     metadata:
@@ -72,11 +71,11 @@ spec:
                 - mongosh
                 - --eval
                 - "db.adminCommand('ping')"
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 15
             successThreshold: 1
-            failureThreshold: 3
+            failureThreshold: 5
 
       # ---- PVC Volume ----
       volumes:

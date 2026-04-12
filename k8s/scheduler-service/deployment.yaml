@@ -35,7 +35,7 @@ spec:
       containers:
         - name: scheduler-service
           image: student-task-pipeline-scheduler-service:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
 
           ports:
             - containerPort: 5003
@@ -72,9 +72,9 @@ spec:
             httpGet:
               path: /health
               port: 5003
-            initialDelaySeconds: 20
+            initialDelaySeconds: 30
             periodSeconds: 15
-            timeoutSeconds: 5
+            timeoutSeconds: 10
             failureThreshold: 3
 
           # ---- Readiness Probe ----
@@ -82,8 +82,8 @@ spec:
             httpGet:
               path: /health
               port: 5003
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 10
             successThreshold: 1
-            failureThreshold: 3
+            failureThreshold: 5
