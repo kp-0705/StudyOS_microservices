@@ -4,11 +4,29 @@
   become: false
 
   vars:
-    project_dir: "/home/dell/Desktop/Sem_2/SPE/END_PROJECT/student-task-pipeline"
     mongo_uri: "mongodb://mongodb:27017/studyos"
     jwt_secret: "studyos_super_secret_key"
     auth_service_url: "http://auth-service:5002"
     task_service_url: "http://task-service:5001"
+
+  pre_tasks:
+    - name: Set project_dir from playbook location
+      set_fact:
+        project_dir: "{{ playbook_dir | dirname | dirname }}"
+
+    - name: Show project_dir
+      debug:
+        msg: "📁 project_dir: {{ project_dir }}"
+
+    - name: Check auth-service directory exists
+      stat:
+        path: "{{ project_dir }}/services/auth-service"
+      register: auth_check
+
+    - name: Fail if project structure is wrong
+      fail:
+        msg: "❌ Invalid project structure at {{ project_dir }}"
+      when: not auth_check.stat.exists
 
   tasks:
     - name: Create .env for auth-service
@@ -42,6 +60,6 @@
           REACT_APP_AUTH_URL=http://localhost:5002
           REACT_APP_TASK_URL=http://localhost:5001
 
-    - name: Environment variables configured successfully
+    - name: Success message
       debug:
-        msg: "✅ All .env files created for StudyOS services!"
+        msg: "✅ All .env files created successfully!"

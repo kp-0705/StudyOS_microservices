@@ -3,8 +3,14 @@
   hosts: local
   become: false
 
-  vars:
-    project_dir: "/home/dell/Desktop/Sem_2/SPE/END_PROJECT/student-task-pipeline"
+  pre_tasks:
+    - name: Set project_dir from playbook location
+      set_fact:
+        project_dir: "{{ playbook_dir | dirname | dirname }}"
+
+    - name: Show project_dir
+      debug:
+        msg: "📁 project_dir: {{ project_dir }}"
 
   tasks:
     - name: Check Docker daemon is running
@@ -14,27 +20,27 @@
 
     - name: Fail if Docker is not running
       fail:
-        msg: "Docker daemon is NOT running! Start it with: sudo systemctl start docker"
+        msg: "❌ Docker is not running! Start it with: sudo systemctl start docker"
       when: docker_info.rc != 0
 
     - name: Stop any existing StudyOS containers
-      shell: docker-compose down --remove-orphans
+      shell: docker compose down --remove-orphans
       args:
         chdir: "{{ project_dir }}"
       ignore_errors: yes
 
-    - name: Remove conflicting named containers (clean slate)
+    - name: Remove conflicting named containers
       shell: |
         docker rm -f studyos-mongodb studyos-auth studyos-task studyos-frontend studyos-scheduler 2>/dev/null || true
       ignore_errors: yes
 
     - name: Build all Docker images
-      shell: docker-compose build
+      shell: docker compose build
       args:
         chdir: "{{ project_dir }}"
 
     - name: Start all containers in detached mode
-      shell: docker-compose up -d
+      shell: docker compose up -d
       args:
         chdir: "{{ project_dir }}"
 
@@ -48,14 +54,7 @@
 
     - name: Print container status
       debug:
-        msg: "{{ containers.stdout_lines }}"
-
-    - name: Verify frontend is accessible
-      uri:
-        url: "http://localhost:3000"
-        status_code: 200
-      register: frontend_check
-      ignore_errors: yes
+        var: containers.stdout_lines
 
     - name: Print access URLs
       debug:

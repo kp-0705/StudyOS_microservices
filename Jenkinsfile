@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_HUB_USER = 'kp0705'
-        KUBECONFIG = '/home/dell/.kube/config'
+        KUBECONFIG = '/home/kartavya-patel/.kube/config'
     }
 
     stages {
@@ -60,7 +60,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo 'Building Docker images...'
-                sh 'docker-compose build'
+                sh 'docker compose build'
             }
         }
 
