@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import taskService from '../services/taskService';
+import analyticsService from '../services/analyticsService';
+import notificationService from '../services/notificationService';
 import Sidebar from '../components/Sidebar';
 import StatCard from '../components/StatCard';
 import TaskCard from '../components/TaskCard';
@@ -14,11 +16,21 @@ export default function Dashboard() {
   const [modal,   setModal]   = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [search,  setSearch]  = useState('');
+  const [stats,   setStats]   = useState(null);
+  const [notifs,  setNotifs]  = useState([]);
 
   const fetchTasks = useCallback(async () => {
     try {
       const res = await taskService.getTasks(token);
       setTasks(res.data);
+      
+      // Fetch Analytics
+      const analyticsRes = await analyticsService.getStats(token);
+      setStats(analyticsRes.data);
+
+      // Fetch Notifications
+      const notifsRes = await notificationService.getNotifications(token);
+      setNotifs(notifsRes.data);
     } catch (err) { console.error(err); }
   }, [token]);
 
@@ -100,11 +112,12 @@ export default function Dashboard() {
         {/* Content */}
         <div style={{ flex:1, overflowY:'auto', padding:'20px 24px', display:'flex', flexDirection:'column', gap:16 }}>
           {/* Stats */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12 }}>
             <StatCard label="Total Tasks"  value={tasks.length} color="green" />
             <StatCard label="DSA Solved"   value={tasks.filter(t=>t.category==='dsa'&&t.done).length} color="purple"/>
             <StatCard label="Due Soon"     value={tasks.filter(t=>!t.done&&t.dueDate&&t.dueDate>=today&&t.dueDate<=soonStr).length} color="orange"/>
             <StatCard label="Completed"    value={tasks.filter(t=>t.done).length} color="pink"/>
+            <StatCard label="Productivity" value={stats ? `${Math.round(stats.productivityScore)}%` : '0%'} color="blue"/>
           </div>
 
           {/* Task list */}
@@ -129,6 +142,28 @@ export default function Dashboard() {
                     onToggle={handleToggle}
                     onEdit={(task) => { setEditTask(task); setModal(true); }}
                     onDelete={handleDelete} />
+                ))
+            }
+          </div>
+
+          {/* Notifications Section */}
+          <div style={{ marginTop: 20 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+              <span style={{ fontFamily:'sans-serif', fontSize:14, fontWeight:700 }}>
+                Recent Notifications
+              </span>
+              <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.07)' }}/>
+            </div>
+            {notifs.length === 0 
+              ? <div style={{ color:'#6b7280', fontSize:12 }}>No notifications.</div>
+              : notifs.slice(0, 5).map(n => (
+                  <div key={n._id} style={{ background:'#161a23', padding:'10px 14px', borderRadius:8, marginBottom:8, fontSize:12, border:'1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                      <span style={{ color:'#4ade80', fontWeight:600 }}>{n.type.toUpperCase()}</span>
+                      <span style={{ color:'#6b7280', fontSize:10 }}>{new Date(n.sentAt).toLocaleString()}</span>
+                    </div>
+                    <div style={{ color:'#e8eaf0' }}>{n.message}</div>
+                  </div>
                 ))
             }
           </div>

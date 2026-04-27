@@ -5,6 +5,7 @@ export default function StatCard({ label, value, color }) {
     purple: { val:'#818cf8', bg:'rgba(129,140,248,0.08)', bar:'#818cf8' },
     orange: { val:'#fb923c', bg:'rgba(251,146,60,0.08)',  bar:'#fb923c' },
     pink:   { val:'#f472b6', bg:'rgba(244,114,182,0.08)', bar:'#f472b6' },
+    blue:   { val:'#60a5fa', bg:'rgba(96,165,250,0.08)',  bar:'#60a5fa' },
   };
   const c = colors[color] || colors.green;
   return (
