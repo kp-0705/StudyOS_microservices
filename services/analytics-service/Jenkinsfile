@@ -47,8 +47,18 @@ pipeline {
 
         stage('Kubernetes Deploy') {
             steps {
-                sh "kubectl apply -f k8s/${SERVICE_NAME}/ --validate=false"
-                sh "kubectl rollout status deployment/${SERVICE_NAME} -n studyos --timeout=120s"
+                sh '''
+                    # Ensure Minikube is running and context is set
+                    MINIKUBE_STATUS=$(minikube status --format='{{.Host}}' 2>/dev/null || echo "Stopped")
+                    if [ "$MINIKUBE_STATUS" != "Running" ]; then
+                        minikube start --driver=docker
+                    fi
+                    kubectl config use-context minikube
+
+                    # Apply manifests
+                    kubectl apply -f k8s/${SERVICE_NAME}/ --validate=false
+                    kubectl rollout status deployment/${SERVICE_NAME} -n studyos --timeout=120s
+                '''
             }
         }
     }
