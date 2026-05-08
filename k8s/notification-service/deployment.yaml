@@ -1,0 +1,91 @@
+# ============================================================
+# Deployment: notification-service
+# Handles sending notifications to users
+# Image: student-task-pipeline-notification-service:latest (built by Jenkins)
+# Port: 5005
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        tier: backend
+    spec:
+      containers:
+        - name: notification-service
+          image: student-task-pipeline-notification-service:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 5005
+
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: NOTIFICATION_PORT
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: NODE_ENV
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: AUTH_SERVICE_URL
+
+            # ---- Environment from Secret (sensitive) ----
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: studyos-secret
+                  key: MONGO_URI
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5005
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5005
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5

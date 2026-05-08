@@ -23,7 +23,7 @@ spec:
     kind: Deployment
     name: auth-service
 
-  minReplicas: 1    # Minimum pods when no load
+  minReplicas: 2    # Minimum 2 for high availability
   maxReplicas: 5    # Maximum pods under high load
 
   metrics:
@@ -32,11 +32,16 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 60   # Scale up if CPU > 60%
+          averageUtilization: 70   # Scale up if CPU > 70%
 
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: 70   # Scale up if Memory > 70%
+          averageUtilization: 80   # Scale up if Memory > 80%
+
+  # ---- Stabilization Behavior ----
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300 # Wait 5 mins before scaling down to prevent flapping

@@ -1,24 +1,23 @@
 # ============================================================
-# HorizontalPodAutoscaler: frontend
-# Scales frontend pods 2–8 based on CPU/Memory
-# (Frontend is usually the bottleneck under high traffic)
+# HorizontalPodAutoscaler: notification-service
+# Automatically scales notification-service pods based on CPU usage
 # ============================================================
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: frontend-hpa
+  name: notification-service-hpa
   namespace: studyos
   labels:
     app: studyos
-    component: frontend
+    component: notification-service
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: frontend
+    name: notification-service
 
-  minReplicas: 2    # Minimum 2 for HA (High Availability)
-  maxReplicas: 8    # Max 8 under traffic spikes
+  minReplicas: 2
+  maxReplicas: 3
 
   metrics:
     - type: Resource

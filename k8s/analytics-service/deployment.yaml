@@ -1,0 +1,96 @@
+# ============================================================
+# Deployment: analytics-service
+# Handles data analytics and reporting
+# Image: student-task-pipeline-analytics-service:latest (built by Jenkins)
+# Port: 5004
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: analytics-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-service
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+        tier: backend
+    spec:
+      containers:
+        - name: analytics-service
+          image: student-task-pipeline-analytics-service:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 5004
+
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: ANALYTICS_PORT
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: NODE_ENV
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: AUTH_SERVICE_URL
+            - name: TASK_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: studyos-config
+                  key: TASK_SERVICE_URL
+
+            # ---- Environment from Secret (sensitive) ----
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: studyos-secret
+                  key: MONGO_URI
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5004
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5004
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5

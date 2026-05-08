@@ -16,7 +16,7 @@ spec:
     kind: Deployment
     name: task-service
 
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 5
 
   metrics:
@@ -25,11 +25,16 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 60
+          averageUtilization: 70
 
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: 70
+          averageUtilization: 80
+
+  # ---- Stabilization Behavior ----
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300 # Wait 5 mins before scaling down

@@ -1,0 +1,23 @@
+# ============================================================
+# Service: notification-service
+# Type: ClusterIP — internal access only
+# External access via Ingress: http://api.studyos.local/notifications
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: notification-service
+spec:
+  type: ClusterIP
+  selector:
+    app: notification-service
+  ports:
+    - name: http
+      port: 5005
+      targetPort: 5005
+      protocol: TCP

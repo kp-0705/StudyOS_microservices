@@ -1,0 +1,64 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = 'scheduler-service'
+        IMAGE_NAME = 'student-task-pipeline-scheduler-service'
+        DOCKER_HUB_USER = 'kp0705'
+        KUBECONFIG = '/home/kartavya-patel/.kube/config'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir("services/${SERVICE_NAME}") {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir("services/${SERVICE_NAME}") {
+                    sh 'npm test -- --passWithNoTests'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir("services/${SERVICE_NAME}") {
+                    sh "docker build -t ${IMAGE_NAME}:latest ."
+                }
+            }
+        }
+
+        stage('Load Image to Minikube') {
+            steps {
+                sh "minikube image load ${IMAGE_NAME}:latest"
+            }
+        }
+
+        stage('Kubernetes Deploy') {
+            steps {
+                sh "kubectl apply -f k8s/${SERVICE_NAME}/ --validate=false"
+                sh "kubectl rollout status deployment/${SERVICE_NAME} -n studyos --timeout=120s"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "${SERVICE_NAME} deployed successfully!"
+        }
+        failure {
+            echo "${SERVICE_NAME} deployment failed!"
+        }
+    }
+}

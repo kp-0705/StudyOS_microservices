@@ -1,0 +1,23 @@
+# ============================================================
+# Service: analytics-service
+# Type: ClusterIP — internal access only
+# External access via Ingress: http://api.studyos.local/analytics
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: studyos
+  labels:
+    app: studyos
+    tier: backend
+    component: analytics-service
+spec:
+  type: ClusterIP
+  selector:
+    app: analytics-service
+  ports:
+    - name: http
+      port: 5004
+      targetPort: 5004
+      protocol: TCP

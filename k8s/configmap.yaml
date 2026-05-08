@@ -15,10 +15,14 @@ data:
   AUTH_PORT: "5002"
   TASK_PORT: "5001"
   SCHEDULER_PORT: "5003"
+  ANALYTICS_PORT: "5004"
+  NOTIFICATION_PORT: "5005"
 
   # --- Internal Service URLs (Kubernetes DNS) ---
   AUTH_SERVICE_URL: "http://auth-service:5002"
   TASK_SERVICE_URL: "http://task-service:5001"
+  ANALYTICS_SERVICE_URL: "http://analytics-service:5004"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:5005"
 
   # --- MongoDB ---
   MONGO_DB: "studyos"
