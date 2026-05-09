@@ -66,3 +66,14 @@ docker-compose up --build
 
 > [!TIP]
 > **Professor's Demo Focus**: Focus on the **Jenkins Pipeline** and the **Kubernetes `kubectl get all -n studyos`** command to show how the microservices are running in a resilient, managed environment.
+
+---
+
+## 🧹 Cleanup: ELK/EFK Stack Removal
+As per the latest requirements, the **ELK/EFK (Elasticsearch, Filebeat, Kibana)** logging stack has been completely removed from the project.
+- Deleted all Kubernetes manifests in `k8s/logging/`.
+- Removed the `logging` namespace and associated storage configurations.
+- Verified that no service-level dependencies on the logging stack remain.
+
+> [!NOTE]
+> The logging stack can be re-integrated in the future if centralized logging is required again.

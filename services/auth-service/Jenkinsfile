@@ -48,11 +48,8 @@ pipeline {
         stage('Kubernetes Deploy') {
             steps {
                 sh '''
-                    # Ensure Minikube is running and context is set
-                    MINIKUBE_STATUS=$(minikube status --format='{{.Host}}' 2>/dev/null || echo "Stopped")
-                    if [ "$MINIKUBE_STATUS" != "Running" ]; then
-                        minikube start --driver=docker
-                    fi
+
+                    # Ensure we are using the minikube context
                     kubectl config use-context minikube
 
                     # Apply manifests
