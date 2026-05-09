@@ -62,9 +62,15 @@ pipeline {
 
     post {
         success {
+            mail to: "kp0705@gmail.com",
+                 subject: "SUCCESS: ${currentBuild.fullDisplayName}",
+                 body: "The deployment was successful. Check logs at ${env.BUILD_URL}"
             echo "${SERVICE_NAME} deployed successfully!"
         }
         failure {
+            mail to: "kp0705@gmail.com",
+                 subject: "FAILURE: ${currentBuild.fullDisplayName}",
+                 body: "The deployment failed. Check logs at ${env.BUILD_URL}"
             echo "${SERVICE_NAME} deployment failed!"
         }
     }

@@ -40,6 +40,9 @@ pipeline {
 
     post {
         success {
+            mail to: "kp0705@gmail.com",
+                 subject: "SUCCESS: ${currentBuild.fullDisplayName}",
+                 body: "The deployment was successful. Check logs at ${env.BUILD_URL}"
             echo 'Infrastructure deployment completed successfully.'
         }
     }
