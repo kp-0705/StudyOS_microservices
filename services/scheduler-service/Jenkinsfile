@@ -50,6 +50,11 @@ pipeline {
                 sh '''
 
                     # Ensure we are using the minikube context
+                    # Copy kubeconfig to workspace to avoid permission issues
+                    mkdir -p .kube
+                    cp $KUBECONFIG .kube/config
+                    export KUBECONFIG=$(pwd)/.kube/config
+
                     kubectl config use-context minikube
 
                     # Apply manifests
