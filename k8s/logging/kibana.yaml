@@ -7,30 +7,55 @@ metadata:
     app: kibana
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: kibana
+
   template:
     metadata:
       labels:
         app: kibana
+
     spec:
       containers:
       - name: kibana
         image: docker.elastic.co/kibana/kibana:7.17.0
+
         ports:
         - containerPort: 5601
           name: ui
+
         env:
         - name: ELASTICSEARCH_HOSTS
           value: "http://elasticsearch:9200"
+
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=512"
+
+        - name: XPACK_REPORTING_ENABLED
+          value: "false"
+
+        - name: XPACK_ML_ENABLED
+          value: "false"
+
+        - name: XPACK_APM_ENABLED
+          value: "false"
+
+        - name: XPACK_MONITORING_ENABLED
+          value: "false"
+
+        - name: NEWSFEED_ENABLED
+          value: "false"
+
         resources:
           requests:
             cpu: "100m"
-            memory: "256Mi"
+            memory: "512Mi"
+
           limits:
             cpu: "500m"
-            memory: "512Mi"
+            memory: "768Mi" 
 ---
 apiVersion: v1
 kind: Service
