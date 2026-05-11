@@ -40,10 +40,20 @@ pipeline {
 
     post {
         success {
-            mail to: "kp0705@gmail.com",
-                 subject: "SUCCESS: ${currentBuild.fullDisplayName}",
-                 body: "The deployment was successful. Check logs at ${env.BUILD_URL}"
+            emailext(
+                to: "kpbhai0705@gmail.com",
+                subject: "SUCCESS: ${currentBuild.fullDisplayName}",
+                body: "The infrastructure deployment was successful. Check logs at ${env.BUILD_URL}"
+            )
             echo 'Infrastructure deployment completed successfully.'
+        }
+        failure {
+            emailext(
+                to: "kpbhai0705@gmail.com",
+                subject: "FAILURE: ${currentBuild.fullDisplayName}",
+                body: "The infrastructure deployment failed. Check logs at ${env.BUILD_URL}"
+            )
+            echo 'Infrastructure deployment failed!'
         }
     }
 }
