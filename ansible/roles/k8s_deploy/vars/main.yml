@@ -1,4 +1,4 @@
 ---
 # Default variables for k8s_deploy role
 target_dir: ""
-kubeconfig_path: "/home/kartavya-patel/.kube/config"
+kubeconfig_path: "{{ lookup('env', 'KUBECONFIG') | default('/home/kartavya-patel/.kube/config', true) }}"
