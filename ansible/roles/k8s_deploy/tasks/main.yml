@@ -31,6 +31,15 @@
   register: secret_output
   changed_when: "'created' in secret_output.stdout or 'configured' in secret_output.stdout"
 
+- name: Ensure MongoDB is deployed
+  command: "kubectl apply -f k8s/mongodb/"
+  args:
+    chdir: "{{ playbook_dir }}/../.."
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  register: mongodb_output
+  changed_when: "'created' in mongodb_output.stdout or 'configured' in mongodb_output.stdout"
+
 - name: Apply Kubernetes manifests
   command: "kubectl apply -f {{ target_dir }} --validate=false"
   args:
