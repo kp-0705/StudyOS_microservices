@@ -31,6 +31,15 @@
   register: secret_output
   changed_when: "'created' in secret_output.stdout or 'configured' in secret_output.stdout"
 
+- name: Ensure Storage (PV/PVC) is deployed
+  command: "kubectl apply -f k8s/storage/"
+  args:
+    chdir: "{{ playbook_dir }}/../.."
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  register: storage_output
+  changed_when: "'created' in storage_output.stdout or 'configured' in storage_output.stdout"
+
 - name: Ensure MongoDB is deployed
   command: "kubectl apply -f k8s/mongodb/"
   args:
