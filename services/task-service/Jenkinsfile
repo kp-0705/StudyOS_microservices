@@ -48,17 +48,20 @@ pipeline {
         stage('Ansible Deploy') {
             steps {
                 sh '''
-
-                    # Ensure we are using the minikube context
-                    # Copy kubeconfig to workspace to avoid permission issues
+                    # Flatten all certs inline so jenkins user doesn't hit permission denied on ~/.minikube
                     mkdir -p .kube
-                    cp $KUBECONFIG .kube/config
+                    KUBECONFIG=/home/kartavya-patel/.kube/config kubectl config view --flatten > .kube/config
+                    chmod 600 .kube/config
                     export KUBECONFIG=$(pwd)/.kube/config
 
                     kubectl config use-context minikube
 
-                    # Apply manifests via Ansible Playbook
-                    ansible-playbook ansible/playbooks/k8s-deploy.yml --vault-password-file .vault_pass -e "target_dir=k8s/${SERVICE_NAME}/" -e "service_name=${SERVICE_NAME}"
+                    # Override kubeconfig_path so Ansible uses workspace copy, not vault path
+                    ansible-playbook ansible/playbooks/k8s-deploy.yml \
+                        --vault-password-file .vault_pass \
+                        -e "target_dir=k8s/${SERVICE_NAME}/" \
+                        -e "service_name=${SERVICE_NAME}" \
+                        -e "kubeconfig_path=$(pwd)/.kube/config"
                 '''
             }
         }
