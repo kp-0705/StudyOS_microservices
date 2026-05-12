@@ -13,6 +13,24 @@
   register: ns_output
   changed_when: "'created' in ns_output.stdout or 'configured' in ns_output.stdout"
 
+- name: Apply shared ConfigMap
+  command: "kubectl apply -f k8s/configmap.yaml"
+  args:
+    chdir: "{{ playbook_dir }}/../.."
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  register: cm_output
+  changed_when: "'created' in cm_output.stdout or 'configured' in cm_output.stdout"
+
+- name: Apply shared Secret
+  command: "kubectl apply -f k8s/secret.yaml"
+  args:
+    chdir: "{{ playbook_dir }}/../.."
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  register: secret_output
+  changed_when: "'created' in secret_output.stdout or 'configured' in secret_output.stdout"
+
 - name: Apply Kubernetes manifests
   command: "kubectl apply -f {{ target_dir }} --validate=false"
   args:
@@ -26,7 +44,7 @@
     var: kubectl_output.stdout_lines
 
 - name: Wait for deployment rollout if deploying a service
-  command: "kubectl rollout status deployment/{{ service_name }} -n studyos --timeout=120s"
+  command: "kubectl rollout status deployment/{{ service_name }} -n studyos --timeout=180s"
   args:
     chdir: "{{ playbook_dir }}/../.."
   environment:

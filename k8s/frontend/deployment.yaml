@@ -35,7 +35,7 @@ spec:
       containers:
         - name: frontend
           image: student-task-pipeline-frontend:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
 
           ports:
             - containerPort: 80   # nginx default port

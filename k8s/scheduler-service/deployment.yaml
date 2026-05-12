@@ -35,7 +35,7 @@ spec:
       containers:
         - name: scheduler-service
           image: student-task-pipeline-scheduler-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
 
           ports:
             - containerPort: 5003

@@ -34,7 +34,7 @@ spec:
       containers:
         - name: analytics-service
           image: student-task-pipeline-analytics-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
 
           ports:
             - containerPort: 5004
