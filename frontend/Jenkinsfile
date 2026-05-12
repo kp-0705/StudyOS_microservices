@@ -31,17 +31,23 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Docker Build into Minikube') {
             steps {
+                sh '''
+                    mkdir -p .minikube-certs
+                    cp /home/kartavya-patel/.minikube/certs/ca.pem     .minikube-certs/ca.pem
+                    cp /home/kartavya-patel/.minikube/certs/cert.pem   .minikube-certs/cert.pem
+                    cp /home/kartavya-patel/.minikube/certs/key.pem    .minikube-certs/key.pem
+                    chmod 600 .minikube-certs/*.pem
+                '''
                 dir(SERVICE_NAME) {
-                    sh "docker build -t ${IMAGE_NAME}:latest ."
+                    sh """
+                        DOCKER_TLS_VERIFY=1 \\
+                        DOCKER_HOST=tcp://192.168.49.2:2376 \\
+                        DOCKER_CERT_PATH=\$(pwd)/../.minikube-certs \\
+                        docker build -t ${IMAGE_NAME}:latest .
+                    """
                 }
-            }
-        }
-
-        stage('Load Image to Minikube') {
-            steps {
-                sh "minikube image load ${IMAGE_NAME}:latest"
             }
         }
 
