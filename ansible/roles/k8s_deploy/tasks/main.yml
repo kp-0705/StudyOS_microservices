@@ -4,6 +4,15 @@
     msg: "target_dir variable must be defined (e.g., k8s/namespace.yaml or k8s/auth-service/)"
   when: target_dir == ""
 
+- name: Ensure studyos namespace exists
+  command: "kubectl apply -f k8s/namespace.yaml"
+  args:
+    chdir: "{{ playbook_dir }}/../.."
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  register: ns_output
+  changed_when: "'created' in ns_output.stdout or 'configured' in ns_output.stdout"
+
 - name: Apply Kubernetes manifests
   command: "kubectl apply -f {{ target_dir }} --validate=false"
   args:
