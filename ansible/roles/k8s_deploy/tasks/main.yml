@@ -6,6 +6,8 @@
 
 - name: Apply Kubernetes manifests
   command: "kubectl apply -f {{ target_dir }} --validate=false"
+  args:
+    chdir: "{{ playbook_dir }}/../.."
   environment:
     KUBECONFIG: "{{ kubeconfig_path }}"
   register: kubectl_output
@@ -16,6 +18,8 @@
 
 - name: Wait for deployment rollout if deploying a service
   command: "kubectl rollout status deployment/{{ service_name }} -n studyos --timeout=120s"
+  args:
+    chdir: "{{ playbook_dir }}/../.."
   environment:
     KUBECONFIG: "{{ kubeconfig_path }}"
   when: service_name is defined
