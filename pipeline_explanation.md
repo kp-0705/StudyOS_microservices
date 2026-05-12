@@ -26,9 +26,11 @@ graph LR
     B -->|Webhook| C["Jenkins"]
     C -->|Build & Test| D["Docker Images"]
     D -->|minikube image load| E["Minikube Cluster"]
+    C -->|ansible-playbook| G["Ansible"]
+    G -->|kubectl apply| E
     E -->|Serves| F["Users"]
     
-    G["Ansible"] -.->|Provision & Configure| E
+    V["Ansible Vault"] -.->|Encrypted Secrets| G
     H["EFK Stack"] -.->|Monitors| E
 
     style A fill:#4CAF50,color:#fff
@@ -39,6 +41,7 @@ graph LR
     style F fill:#FF9800,color:#fff
     style G fill:#EE0000,color:#fff
     style H fill:#F4BD19,color:#000
+    style V fill:#7B1FA2,color:#fff
 ```
 
 ---
@@ -49,19 +52,22 @@ The project uses a **multi-pipeline Jenkins architecture**: one **infrastructure
 
 ### 3.1 Infrastructure Pipeline (`Jenkinsfile` — root)
 
-This pipeline runs **first** and sets up the shared Kubernetes foundation:
+This pipeline runs **first** and sets up the shared Kubernetes foundation. **It uses Ansible playbooks** (not direct `kubectl`) to apply manifests, with **Ansible Vault** for encrypted secrets:
 
 ```
-Stage 1: Checkout        → Pull latest code from GitHub
-Stage 2: K8s Infra Deploy →
-    ├── kubectl apply namespace.yaml        (creates 'studyos' namespace)
-    ├── kubectl apply configmap.yaml        (non-sensitive config: ports, URLs)
-    ├── kubectl apply secret.yaml           (sensitive config: MongoDB URI, JWT)
-    ├── kubectl apply storage/              (PersistentVolume + PVC for MongoDB)
-    ├── kubectl apply mongodb/              (MongoDB StatefulSet/Deployment)
-    ├── kubectl apply ingress.yaml          (NGINX routing rules)
-    └── kubectl apply resource-quota.yaml   (cluster resource limits)
+Stage 1: Checkout                  → Pull latest code from GitHub
+Stage 2: Ansible Infrastructure Deploy →
+    ├── ansible-playbook k8s-deploy.yml ... -e "target_dir=k8s/namespace.yaml"
+    ├── ansible-playbook k8s-deploy.yml ... -e "target_dir=k8s/configmap.yaml"
+    ├── ansible-playbook k8s-deploy.yml ... -e "target_dir=k8s/secret.yaml"
+    ├── ansible-playbook k8s-deploy.yml ... -e "target_dir=k8s/storage/"
+    ├── ansible-playbook k8s-deploy.yml ... -e "target_dir=k8s/mongodb/"
+    ├── ansible-playbook k8s-deploy.yml ... -e "target_dir=k8s/ingress.yaml"
+    └── ansible-playbook k8s-deploy.yml ... -e "target_dir=k8s/resource-quota.yaml"
 ```
+
+> [!NOTE]
+> Every `ansible-playbook` call includes `--vault-password-file .vault_pass` to decrypt Ansible Vault-encrypted secrets at runtime.
 
 ### 3.2 Per-Service Pipeline (e.g., `services/analytics-service/Jenkinsfile`)
 
@@ -73,7 +79,7 @@ graph TD
     B --> C["3. Test"]
     C --> D["4. Docker Build"]
     D --> E["5. Load Image to Minikube"]
-    E --> F["6. Kubernetes Deploy"]
+    E --> F["6. Ansible Deploy"]
     F --> G{"Success?"}
     G -->|Yes| H["📧 Email: SUCCESS"]
     G -->|No| I["📧 Email: FAILURE"]
@@ -94,10 +100,10 @@ graph TD
 |---|---|---|
 | **Checkout** | Pulls latest code from GitHub | `checkout scm` |
 | **Install Dependencies** | Installs Node.js packages | `npm install` |
-| **Test** | Runs unit tests | `npm test -- --passWithNoTests` |
+| **Test** | Runs unit tests (e.g., health check tests via Jest + Supertest) | `npm test -- --passWithNoTests` |
 | **Docker Build** | Builds a Docker image from Dockerfile | `docker build -t <image>:latest .` |
 | **Load to Minikube** | Pushes image into local Minikube registry | `minikube image load <image>:latest` |
-| **K8s Deploy** | Applies K8s manifests + waits for rollout | `kubectl apply -f k8s/<service>/` |
+| **Ansible Deploy** | Runs Ansible playbook to apply K8s manifests + wait for rollout | `ansible-playbook k8s-deploy.yml --vault-password-file .vault_pass -e "target_dir=k8s/<service>/"` |
 | **Post-Build** | Sends email notification on success/failure | `emailext(...)` |
 
 > [!IMPORTANT]
@@ -125,7 +131,9 @@ CMD ["npm", "start"]         # Start the service
 
 ## 5. Configuration Management (Ansible)
 
-Ansible automates the **initial server provisioning** on Ubuntu:
+Ansible serves **two purposes** in this project: (1) initial server provisioning, and (2) **Kubernetes deployment orchestration** invoked by Jenkins.
+
+### 5.1 Provisioning Playbooks (Server Setup)
 
 ```mermaid
 graph TD
@@ -148,14 +156,43 @@ graph TD
     style D fill:#F44336,color:#fff
 ```
 
-### Playbooks
-
 | Playbook | Purpose |
 |---|---|
 | `deploy.yml` | **Master** — orchestrates all other playbooks in order |
 | `install-dependencies.yml` | Validates project structure, checks Node/Docker versions, runs `npm install` for every service |
 | `configure-env.yml` | Sets up environment variables and configuration files |
 | `setup-docker.yml` | Stops old containers, rebuilds images, starts fresh containers, verifies health |
+
+### 5.2 K8s Deployment Playbook (Jenkins Integration)
+
+This is the **critical addition** — Jenkins calls this playbook to deploy to Kubernetes:
+
+```mermaid
+graph TD
+    J["Jenkins Pipeline"] -->|ansible-playbook| A["k8s-deploy.yml"]
+    A -->|includes| R["k8s_deploy role"]
+    R --> R1["Validate target_dir is set"]
+    R1 --> R2["kubectl apply -f target_dir"]
+    R2 --> R3["kubectl rollout status<br/>(if service_name provided)"]
+    
+    V["Ansible Vault<br/>(vault.yml)"] -.->|decrypted via .vault_pass| A
+
+    style J fill:#D33833,color:#fff
+    style A fill:#EE0000,color:#fff
+    style R fill:#FF5722,color:#fff
+    style V fill:#7B1FA2,color:#fff
+```
+
+| Component | File | Purpose |
+|---|---|---|
+| **Playbook** | `playbooks/k8s-deploy.yml` | Entry point — loads vault secrets + includes role |
+| **Role** | `roles/k8s_deploy/tasks/main.yml` | Validates input, runs `kubectl apply`, waits for rollout |
+| **Role Vars** | `roles/k8s_deploy/vars/main.yml` | Default vars: `kubeconfig_path`, `target_dir` |
+| **Vault** | `group_vars/all/vault.yml` | Encrypted secrets (MONGO_URI, JWT_SECRET) — decrypted at runtime |
+| **Vault Pass** | `.vault_pass` | Password file to decrypt vault (not committed to repo in production) |
+
+> [!IMPORTANT]
+> **Ansible Vault** encrypts sensitive data (like database credentials) at rest. Jenkins passes `--vault-password-file .vault_pass` to decrypt them during deployment, ensuring secrets never appear in plaintext in version control.
 
 ---
 
@@ -211,7 +248,7 @@ Each microservice is deployed with **3 K8s manifests**:
 |---|---|---|
 | **Deployment** | Manages pods | RollingUpdate strategy (`maxSurge: 1, maxUnavailable: 0`), liveness + readiness probes on `/health`, resource limits (128Mi–256Mi RAM, 100m–300m CPU) |
 | **Service** | Internal networking | ClusterIP service exposing the pod's port within the cluster |
-| **HPA** | Auto-scaling | Scales 2–3 replicas based on CPU (>70%) and memory (>80%) utilization, 5-min scale-down stabilization |
+| **HPA** | Auto-scaling | Scales 2–5 replicas based on CPU (>70%) and memory (>80%) utilization, 5-min scale-down stabilization |
 
 ### 6.3 Shared Infrastructure Resources
 
@@ -246,36 +283,37 @@ The project implements the **EFK (Elasticsearch-Filebeat-Kibana)** stack in a se
 Here's what happens when a developer pushes code:
 
 ```
-1. Developer pushes to GitHub (feature/final-submission branch)
+1. Developer pushes to GitHub
            │
            ▼
 2. GitHub Webhook triggers Jenkins
            │
            ▼
 3. Infrastructure Pipeline (runs first if needed)
-   └── Sets up namespace, configmap, secret, MongoDB, ingress, quotas
+   └── Jenkins calls ansible-playbook (with Vault) for each K8s resource:
+       namespace → configmap → secret → storage → mongodb → ingress → quota
            │
            ▼
 4. Per-Service Pipeline (runs for changed service)
    ├── Checkout code
    ├── npm install
-   ├── npm test
+   ├── npm test (Jest + Supertest unit tests)
    ├── docker build → creates container image
    ├── minikube image load → pushes to local cluster
-   ├── kubectl apply → deploys to K8s
+   ├── ansible-playbook k8s-deploy.yml → applies K8s manifests via Ansible role
    └── kubectl rollout status → waits for healthy rollout
            │
            ▼
 5. K8s takes over
    ├── RollingUpdate ensures zero downtime
    ├── Liveness/Readiness probes verify health
-   ├── HPA scales pods based on CPU/memory load
+   ├── HPA scales pods (2–5 replicas) based on CPU/memory load
    └── Ingress routes external traffic to correct service
            │
            ▼
 6. EFK Stack monitors everything
    ├── Filebeat collects logs from all pods
-   ├── Elasticsearch indexes them
+   ├── Elasticsearch indexes them (with PVC persistence)
    └── Kibana provides searchable dashboard
            │
            ▼
@@ -292,7 +330,9 @@ Here's what happens when a developer pushes code:
 | **CI/CD** | Jenkins (Declarative Pipelines) | Automated build, test, deploy |
 | **Containerization** | Docker | Package each service as a container |
 | **Container Orchestration** | Kubernetes (Minikube) | Manage, scale, and heal containers |
-| **Configuration Mgmt** | Ansible | Automate server provisioning |
+| **Configuration Mgmt** | Ansible (Playbooks + Roles) | Server provisioning + K8s deployment orchestration |
+| **Secrets Management** | Ansible Vault | Encrypt sensitive data (DB credentials, JWT secrets) at rest |
+| **Testing** | Jest + Supertest | Unit tests for service health endpoints |
 | **Logging** | EFK (Elasticsearch + Filebeat + Kibana) | Centralized log collection and monitoring |
 | **Notifications** | Jenkins Email Extension | Build status alerts |
 | **Reverse Proxy** | NGINX Ingress Controller | HTTP routing and load balancing |
@@ -304,14 +344,16 @@ Here's what happens when a developer pushes code:
 | Practice | Implementation |
 |---|---|
 | **Microservices Architecture** | 5 independent backend services + frontend |
-| **Infrastructure as Code (IaC)** | All K8s manifests and Ansible playbooks are version-controlled |
+| **Infrastructure as Code (IaC)** | All K8s manifests, Ansible playbooks, and roles are version-controlled |
 | **CI/CD Automation** | Jenkins pipelines auto-trigger on code push |
 | **Containerization** | Every service has a Dockerfile |
 | **Container Orchestration** | K8s Deployments, Services, HPA |
 | **Zero-Downtime Deployments** | RollingUpdate strategy with readiness probes |
 | **Auto-Scaling** | HorizontalPodAutoscaler based on CPU/memory |
 | **Centralized Logging** | EFK stack in separate namespace |
-| **Configuration Management** | ConfigMaps (non-sensitive) + Secrets (sensitive) |
+| **Secrets Management** | Ansible Vault encrypts sensitive data; ConfigMaps for non-sensitive config |
+| **Ansible Roles** | Reusable `k8s_deploy` role for consistent deployment across all pipelines |
+| **Unit Testing** | Jest + Supertest tests for health check endpoints |
 | **Resource Governance** | ResourceQuota prevents namespace overuse |
 | **Health Monitoring** | Liveness + Readiness probes on `/health` endpoint |
 | **Email Notifications** | Jenkins emailext on build success/failure |
