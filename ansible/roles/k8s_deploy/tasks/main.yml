@@ -1,0 +1,21 @@
+---
+- name: Ensure target_dir is provided
+  fail:
+    msg: "target_dir variable must be defined (e.g., k8s/namespace.yaml or k8s/auth-service/)"
+  when: target_dir == ""
+
+- name: Apply Kubernetes manifests
+  command: "kubectl apply -f {{ target_dir }} --validate=false"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  register: kubectl_output
+
+- name: Show kubectl output
+  debug:
+    var: kubectl_output.stdout_lines
+
+- name: Wait for deployment rollout if deploying a service
+  command: "kubectl rollout status deployment/{{ service_name }} -n studyos --timeout=120s"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  when: service_name is defined

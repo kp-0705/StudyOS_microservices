@@ -27,15 +27,8 @@ The system is built on a **Microservices Architecture**, ensuring scalability an
 ### 1. **Kubernetes (Minikube) Deployment** (Recommended)
 This uses the full orchestration layer with Kubernetes manifests.
 
-1. **Start Minikube**:
-   ```bash
-   minikube start --driver=docker
-   ```
-2. **Apply Manifests**:
-   ```bash
-   kubectl apply -f k8s/namespace.yaml
-   kubectl apply -f k8s/
-   ```
+1. **Start Minikube**: Initialize your Minikube environment using the appropriate driver (such as docker) to simulate the Kubernetes cluster locally.
+2. **Apply Manifests**: Deploy the foundational namespace manifest followed by all other configuration, storage, and service manifests located in the k8s directory using the standard Kubernetes application command.
 3. **Access the App**:
    - Ingress: `http://studyos.local`
    - NodePort: `http://localhost:30000`
@@ -43,17 +36,17 @@ This uses the full orchestration layer with Kubernetes manifests.
 ### 2. **Docker Compose** (Local Development)
 Ideal for rapid development and testing.
 
-```bash
-docker-compose up --build
-```
+Ideal for rapid development and testing.
+
+Use the Docker Compose tool with the build flag to orchestrate and run the multi-container setup locally based on the provided configuration file.
 Access at: `http://localhost:3000`
 
 ### 3. **Ansible Deployment**
 Used for configuration management on Ubuntu servers.
 
-```bash
-ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml
-```
+Used for configuration management on Ubuntu servers.
+
+Execute the Ansible playbook specifically designed for deployment, pointing it to the inventory file to target the correct hosts.
 
 ---
 
@@ -85,8 +78,13 @@ The project features a fully automated Jenkins pipeline (`Jenkinsfile`) that han
 
 ---
 
-## 👥 Contributors
-- **Kartavya Patel** ([kp-0705](https://github.com/kp-0705))
+## 💡 Innovative Solutions & Unique Approaches
+
+This project implements several advanced DevOps practices:
+- **Centralized Deployment via Ansible and Jenkins**: Instead of coupling deployment manifests directly into CI/CD logic, Ansible Roles and Ansible Vault are utilized to decouple orchestration and securely manage secrets, triggered seamlessly by the Jenkins Pipeline.
+- **Resource Optimization in Minikube**: To ensure stable ELK stack logging within a constrained Minikube environment, aggressive Java Heap memory limits and Node.js limits were applied, alongside fine-tuned resource quotas.
+- **Microservices Fault Tolerance & Autoscaling**: The architecture leverages Kubernetes Horizontal Pod Autoscaler (HPA) to dynamically adjust pod counts based on CPU and memory utilization, ensuring robust performance under fluctuating loads.
+- **End-to-End Test Automation Quality Gates**: The pipeline guarantees code quality by ensuring test scripts are reliably executed as a prerequisite quality gate before image build and container registry push.
 
 ---
 

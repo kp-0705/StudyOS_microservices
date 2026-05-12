@@ -1,0 +1,4 @@
+---
+# Default variables for k8s_deploy role
+target_dir: ""
+kubeconfig_path: "/home/kartavya-patel/.kube/config"

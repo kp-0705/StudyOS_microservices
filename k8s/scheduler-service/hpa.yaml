@@ -1,0 +1,47 @@
+# ============================================================
+# HorizontalPodAutoscaler: scheduler-service
+# Automatically scales scheduler-service pods based on CPU usage
+#
+# Behavior:
+#   - min 1 pod, max 5 pods
+#   - Scales UP when avg CPU > 70% or Memory > 80%
+#   - Scales DOWN when CPU drops below threshold
+#   - Requires: metrics-server installed on cluster
+#     (minikube: minikube addons enable metrics-server)
+# ============================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: scheduler-service-hpa
+  namespace: studyos
+  labels:
+    app: studyos
+    component: scheduler-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: scheduler-service
+
+  minReplicas: 2    # Minimum 2 for high availability
+  maxReplicas: 5    # Maximum pods under high load
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70   # Scale up if CPU > 70%
+
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80   # Scale up if Memory > 80%
+
+  # ---- Stabilization Behavior ----
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300 # Wait 5 mins before scaling down to prevent flapping

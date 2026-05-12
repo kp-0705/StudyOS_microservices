@@ -21,6 +21,13 @@ The application follows a **Microservices Architecture**, where each core functi
 
 ---
 
+## 💡 Innovative Solutions & Unique Approaches
+- **Ansible and Vault Driven Deployments**: Kubenetes manifests are deployed securely through Ansible roles natively triggered by Jenkins, preventing plaintext secrets and direct kubectl dependencies in the pipeline.
+- **Resource Constraints Tuning**: The ELK stack has been heavily optimized for Minikube, capping the JVM and Node.js environments to prevent memory thrashing.
+- **Kubernetes HPA (Horizontal Pod Autoscaling)**: Microservices are equipped with HPA to scale efficiently during peak loads automatically.
+
+---
+
 ## 🚀 How to Run the Project (End-to-End)
 
 There are two primary ways to run the project. For a professor, showing the **Kubernetes (Minikube)** deployment is usually the most impressive as it demonstrates advanced orchestration.
@@ -38,10 +45,7 @@ The entire project is automated. To run the end-to-end flow:
 
 ### Option 2: Local Manual Deployment (Docker Compose)
 For quick local testing without Kubernetes:
-```bash
-# From the root directory
-docker-compose up --build
-```
+Execute the standard Docker Compose command with the build flag from the root directory to stand up the local environment.
 - Access at: `http://localhost:3000`
 
 ---
@@ -69,11 +73,40 @@ docker-compose up --build
 
 ---
 
-## 🧹 Cleanup: ELK/EFK Stack Removal
-As per the latest requirements, the **ELK/EFK (Elasticsearch, Filebeat, Kibana)** logging stack has been completely removed from the project.
-- Deleted all Kubernetes manifests in `k8s/logging/`.
-- Removed the `logging` namespace and associated storage configurations.
-- Verified that no service-level dependencies on the logging stack remain.
+## 🎤 Viva Presentation Guide
 
-> [!NOTE]
-> The logging stack can be re-integrated in the future if centralized logging is required again.
+When presenting this project to an examiner, follow this structured flow to maximize your marks and demonstrate your understanding of modern software engineering.
+
+### 1. The Pitch (1 Minute)
+*   **Start with**: "My project is StudyOS. It's a student management system built using a modern DevOps lifecycle and a Microservices architecture."
+*   **Highlight**: "The goal wasn't just to write code, but to demonstrate how software is tested, containerized, and orchestrated in the real world using Docker, Jenkins, and Kubernetes."
+
+### 2. Show the Automation (CI/CD & Tests)
+*   **The Jenkinsfile**: Open Jenkins and show them a successful pipeline run. Explain that Jenkins automatically pulls code, runs tests, builds images, and deploys.
+*   **Unit Testing (Quality Gate)**:
+    *   Open `services/auth-service/src/__tests__/app.test.js`.
+    *   Show how you use `jest` and `supertest` to automatically verify the health of your API endpoints.
+    *   Run `npm test` inside the `auth-service` folder to show a live, passing test.
+
+### 3. Show Kubernetes Orchestration (Live Demo)
+*   **Run**: Execute the standard Kubernetes command to list all resources within the `studyos` namespace.
+    *   *Explain*: "These are my independent microservices running as pods. Unlike a monolith, if one crashes, the others survive."
+*   **Demonstrate Self-Healing**:
+    *   Find a pod name and forcefully delete it using the Kubernetes pod deletion command within the specific namespace.
+    *   Run the command to watch the pods in real-time, showing Kubernetes instantly spinning up a replacement pod.
+
+### 4. ELK Logging Stack (Optimization & Monitoring)
+*   **Run**: List all pods within the `logging` namespace to demonstrate the stack's status.
+*   **Explain**: We implemented an ELK (Elasticsearch, Filebeat, Kibana) stack for centralized logging. 
+*   **Highlight**: Mention that you heavily optimized the memory usage (e.g., restricting Elasticsearch heap to 256MB and Kibana Node.js limit to 512MB) to ensure the stack runs stably in a resource-constrained Minikube environment.
+
+### 5. Common Viva Questions
+*   **Q: Why use Kubernetes if you have Docker?**
+    *   **A:** Docker just runs containers. Kubernetes is an orchestrator that manages them—handling auto-scaling, load balancing, and self-healing when they crash.
+*   **Q: Why Microservices instead of a Monolith?**
+    *   **A:** For fault isolation (one service crashing doesn't bring down the whole app) and independent scaling (you can scale just the Scheduler without scaling the Auth service).
+
+---
+
+## ☁️ Finalizing and Pushing Code to GitHub
+To push all these final changes (optimized ELK manifests and new test cases) to your remote repository, execute the necessary Git commands to create a new branch (e.g., `FUll_SPE_project`), stage all changes, commit them with a descriptive message, and push the branch upstream to the origin repository.

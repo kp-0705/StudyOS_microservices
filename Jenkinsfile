@@ -12,26 +12,26 @@ pipeline {
             }
         }
 
-        stage('Kubernetes Infrastructure Deploy') {
+        stage('Ansible Infrastructure Deploy') {
             steps {
                 echo 'Deploying shared infrastructure...'
 
                 // Apply namespace
-                sh 'kubectl apply -f k8s/namespace.yaml --validate=false'
+                sh 'ansible-playbook ansible/playbooks/k8s-deploy.yml --vault-password-file .vault_pass -e "target_dir=k8s/namespace.yaml"'
 
                 // Apply ConfigMap and Secret
-                sh 'kubectl apply -f k8s/configmap.yaml --validate=false'
-                sh 'kubectl apply -f k8s/secret.yaml --validate=false'
+                sh 'ansible-playbook ansible/playbooks/k8s-deploy.yml --vault-password-file .vault_pass -e "target_dir=k8s/configmap.yaml"'
+                sh 'ansible-playbook ansible/playbooks/k8s-deploy.yml --vault-password-file .vault_pass -e "target_dir=k8s/secret.yaml"'
 
                 // Apply Storage (PV and PVC for MongoDB)
-                sh 'kubectl apply -f k8s/storage/ --validate=false'
+                sh 'ansible-playbook ansible/playbooks/k8s-deploy.yml --vault-password-file .vault_pass -e "target_dir=k8s/storage/"'
 
                 // Apply MongoDB
-                sh 'kubectl apply -f k8s/mongodb/ --validate=false'
+                sh 'ansible-playbook ansible/playbooks/k8s-deploy.yml --vault-password-file .vault_pass -e "target_dir=k8s/mongodb/"'
                 
                 // Apply Ingress and ResourceQuota
-                sh 'kubectl apply -f k8s/ingress.yaml --validate=false'
-                sh 'kubectl apply -f k8s/resource-quota.yaml --validate=false'
+                sh 'ansible-playbook ansible/playbooks/k8s-deploy.yml --vault-password-file .vault_pass -e "target_dir=k8s/ingress.yaml"'
+                sh 'ansible-playbook ansible/playbooks/k8s-deploy.yml --vault-password-file .vault_pass -e "target_dir=k8s/resource-quota.yaml"'
 
                 echo '✅ Infrastructure deployed successfully.'
             }
